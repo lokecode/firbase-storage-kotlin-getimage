@@ -1,4 +1,4 @@
-package com.demo.picturefirebasekotlin
+package com.androiddevs.picturefirebasekotlin
 
 import org.junit.Test
 

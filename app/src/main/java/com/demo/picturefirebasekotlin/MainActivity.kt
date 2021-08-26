@@ -1,66 +1,89 @@
 package com.demo.picturefirebasekotlin
 
+import com.google.firebase.firestore.ktx.firestore
+import kotlinx.android.synthetic.main.item_image.*
 import android.app.Activity
-import android.app.ProgressDialog
 import android.content.Intent
-import android.content.res.Configuration
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
-import android.view.LayoutInflater
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatButton
-import androidx.appcompat.widget.AppCompatImageView
-import androidx.recyclerview.widget.RecyclerView
-import com.demo.picturefirebasekotlin.databinding.ActivityMainBinding
-import com.google.firebase.storage.FirebaseStorage
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.firebase.firestore.ktx.toObject
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 import kotlinx.android.synthetic.main.activity_main.*
-import java.io.File
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+
+data class Person(
+    var name: String = "",
+    var discription: String = "",
+)
+
+private const val REQUEST_CODE_IMAGE_PICK = 0
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var binding : ActivityMainBinding
+    var curFile: Uri? = null
+
+    private val personCollectionRef = Firebase.firestore.collection("post")
+    val imageRef = Firebase.storage.reference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        start()
+        setContentView(R.layout.activity_main)
 
-        binding.getImage.setOnClickListener {   // getiamge is a botton and binding is the layout
+        ivImage.setOnClickListener {
+            Intent(Intent.ACTION_GET_CONTENT).also {
+                it.type = "image/*"
+                startActivityForResult(it, REQUEST_CODE_IMAGE_PICK)
+            }
+        }
 
-            val progressDialog = ProgressDialog(this)
-            progressDialog.setMessage("Fetching image....")
-            progressDialog.setCancelable(false)
-            progressDialog.show()
+        listFiles()
+    }
 
-
-            val imageName = binding.etImageId.text.toString()
-            val storageRef = FirebaseStorage.getInstance().reference.child("images/$imageName.jpg")   // important
-
-
-
-            val localfile = File.createTempFile("tempImage", "jpg") // important
-            storageRef.getFile(localfile).addOnSuccessListener {
-
-                if(progressDialog.isShowing)
-                    progressDialog.dismiss()
-
-                val bitmap = BitmapFactory.decodeFile(File.createTempFile("tempImage", "jpg").absolutePath)  // important
-                binding.imageView.setImageBitmap(bitmap)   // important
-
-
-            }.addOnFailureListener {
-
-                if(progressDialog.isShowing)
-                    progressDialog.dismiss()
-                Toast.makeText(this, "Failed to retreave image", Toast.LENGTH_SHORT).show()
+    private fun listFiles() = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val images = imageRef.child("images/").listAll().await()
+            val imageUrls = mutableListOf<String>()
+            for(image in images.items) {
+                val url = image.downloadUrl.await()
+                imageUrls.add(url.toString())
+            }
+            val querySnapshot = personCollectionRef.get().await()
+            val postnamelist = mutableListOf<Person?>()
+            // get String from db
+            for(document in querySnapshot.documents) {
+                val person = document.toObject<Person>()
+                postnamelist.add(person)
+            }
+            withContext(Dispatchers.Main) {
+                val imageAdapter = ImageAdapter(imageUrls, postnamelist)
+                rvImages.apply {
+                    adapter = imageAdapter
+                    layoutManager = LinearLayoutManager(this@MainActivity)
+                }
+            }
+        } catch(e: Exception) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
             }
         }
     }
-    fun start() {
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if(resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_IMAGE_PICK) {
+            data?.data?.let {
+                curFile = it
+                ivImage.setImageURI(it)
+            }
+        }
     }
+
 }
