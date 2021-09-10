@@ -1,7 +1,9 @@
-package com.demo.picturefirebasekotlin
+package com.demo.picturefirebasekotlin.model
 
 data class Post(
-        var discription: String = "",
-        var uid: String = "",
-        var url: String = "",
+        val name: String?,
+        val flag: String?,
+        val alpha2Code: String?,
+        val capital: String?,
+        val region: String?
 )
