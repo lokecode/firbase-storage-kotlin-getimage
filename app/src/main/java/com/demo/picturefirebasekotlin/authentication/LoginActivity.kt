@@ -6,20 +6,17 @@ import android.os.Bundle
 import android.text.TextUtils
 import android.view.WindowManager
 import android.widget.Toast
-import com.google.firebase.auth.FirebaseAuth
+import com.demo.picturefirebasekotlin.repository.Login
 import kotlinx.android.synthetic.main.activity_login.*
 
 class LoginActivity : AppCompatActivity() {
-
-
-    private val auth = FirebaseAuth.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
-        val currentuser = auth.currentUser
+        val currentuser = Login("", "").user()
         if(currentuser != null) {
             startActivity(Intent(this@LoginActivity,  MainActivity::class.java))
             finish()
@@ -39,14 +36,14 @@ class LoginActivity : AppCompatActivity() {
                 usernameInput.setError("Please enter password")
                 return@setOnClickListener
             }
-            auth.signInWithEmailAndPassword(usernameInput.text.toString(), passwordInput.text.toString())
-                .addOnCompleteListener {
-                    if(it.isSuccessful) {
-                        finish()
-                    } else {
-                        Toast.makeText(this@LoginActivity, "Login failed, please try again! ", Toast.LENGTH_LONG).show()
-                    }
-                }
+            val login = Login(usernameInput.text.toString(), passwordInput.text.toString())
+
+            if (login.login().isSuccessful) {
+                finish()
+            } else {
+                Toast.makeText(this@LoginActivity, "Login failed, please try again! ", Toast.LENGTH_LONG).show()
+            }
+
 
         }
 

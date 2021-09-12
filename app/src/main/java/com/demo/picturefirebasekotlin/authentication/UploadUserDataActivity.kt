@@ -8,16 +8,14 @@ import android.provider.MediaStore
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.ktx.firestore
+import com.demo.picturefirebasekotlin.data.firebase.AuthService
+import com.demo.picturefirebasekotlin.repository.UplaodUserData
 import kotlinx.android.synthetic.main.activity_upload_pp.*
 
 
 class UploadUserDataActivity : AppCompatActivity() {
 
-    private val auth = FirebaseAuth.getInstance()
+    private val auth = AuthService().authInstance()
     private lateinit var filepath : Uri
     override fun onCreate(savedInstanceState: Bundle?) {
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
@@ -43,12 +41,11 @@ class UploadUserDataActivity : AppCompatActivity() {
             var pd = ProgressDialog(this)
             pd.show()
             val name = editTText2.text.toString()
-            val uid = auth.uid.toString()
-            val user = User(name, uid)
-            Firebase.firestore.collection("user").add(user)
+            val UserData = UplaodUserData(name)
 
-            val imageRef = FirebaseStorage.getInstance().reference.child("profilePic/${auth.uid}.jpg")
-            imageRef.putFile(filepath)
+            UserData.makeUser()
+
+            UserData.getImage().putFile(filepath)
                 .addOnSuccessListener {
                     pd.dismiss()
                     Toast.makeText(applicationContext, "File uploaded", Toast.LENGTH_LONG).show()
@@ -74,15 +71,12 @@ class UploadUserDataActivity : AppCompatActivity() {
         startActivityForResult(Intent.createChooser(i, "Choose Picture"), 111)
     }
 
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if(requestCode==111 && resultCode == RESULT_OK && data != null) {
             filepath = data.data!!
             val bitmap = MediaStore.Images.Media.getBitmap(contentResolver,filepath)
             imageView.setImageBitmap(bitmap)
-
-
         }
     }
 }

@@ -20,11 +20,11 @@ class PostAdapter(): RecyclerView.Adapter<PostAdapter.ImageViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostAdapter.ImageViewHolder {
         return ImageViewHolder(
-            LayoutInflater.from(parent.context).inflate(
-                R.layout.item_image,
-                parent,
-                false
-            )
+                LayoutInflater.from(parent.context).inflate(
+                        R.layout.item_image,
+                        parent,
+                        false
+                )
         )
     }
 

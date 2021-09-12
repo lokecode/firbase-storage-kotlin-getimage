@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.text.TextUtils
 import android.view.WindowManager
 import android.widget.Toast
+import com.demo.picturefirebasekotlin.repository.SignUp
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.android.synthetic.main.activity_login.*
 import kotlinx.android.synthetic.main.activity_signup.*
@@ -30,7 +31,7 @@ class SignupActivity : AppCompatActivity() {
                 Toast.makeText(this,"password has t be over 5 letters", Toast.LENGTH_LONG).show()
                 editText2.setText("") }
             else
-                auth.createUserWithEmailAndPassword(email,password).addOnCompleteListener(this) { task ->
+                SignUp(email, password).signUp().addOnCompleteListener() { task ->
                     if (task.isSuccessful) {
                         Toast.makeText(this, "User created", Toast.LENGTH_SHORT).show()
                         startActivity(Intent(this@SignupActivity, UploadUserDataActivity::class.java))
@@ -38,8 +39,9 @@ class SignupActivity : AppCompatActivity() {
                         Toast.makeText(this, "User not created", Toast.LENGTH_SHORT).show()
                     }
                 }
+        }
             editText.setText("")
             editText2.setText("")
         }
-    }
+
 }

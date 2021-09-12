@@ -8,11 +8,7 @@ import android.provider.MediaStore
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.demo.picturefirebasekotlin.model.Post
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.storage.ktx.storage
+import com.demo.picturefirebasekotlin.repository.UplaodUserData
 import kotlinx.android.synthetic.main.activity_upload.*
 import kotlinx.android.synthetic.main.activity_upload.button2
 import kotlinx.android.synthetic.main.activity_upload.editText2
@@ -20,18 +16,17 @@ import kotlinx.android.synthetic.main.activity_upload.imageView
 import kotlinx.android.synthetic.main.activity_upload_pp.*
 import kotlin.random.Random
 
-
-
 class UploadPostActivity : AppCompatActivity() {
 
-    private val auth = FirebaseAuth.getInstance()
     private lateinit var filepath : Uri
-
+    private var profileImage = StringBuilder()
     override fun onCreate(savedInstanceState: Bundle?) {
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_upload)
 
+        val profileImg = intent.getStringExtra("EXTRA_PROFILEIMG")
+        profileImage.append(profileImg).toString()
         startFileChooser()
 
         button2.setOnClickListener {
@@ -42,8 +37,6 @@ class UploadPostActivity : AppCompatActivity() {
             startActivity(Intent(this@UploadPostActivity,  MainActivity::class.java))
         }
     }
-
-    val imageRef = Firebase.storage.reference
     val FileName = mutableListOf<String>()
 
     private fun generateFileName() {
@@ -57,18 +50,14 @@ class UploadPostActivity : AppCompatActivity() {
     private fun uploadFile() {
         if(filepath != null) {
             val pd = ProgressDialog(this)
-            pd.show()
-
             val discription = editText2.text.toString()
-            val uid = auth.uid.toString()
-            val post = Post("", "", "", "", discription)
-            generateFileName()
             val Filename = "${FileName}"
+            val uploadPost = UplaodUserData(discription, profileImage.toString(), Filename)
+            pd.show()
+            generateFileName()
+            uploadPost.makePost()
 
-            Firebase.firestore.collection("apiPost").add(post)
-
-            var imageRef = imageRef.child("images/${Filename}.jpg")
-            imageRef.putFile(filepath)
+            uploadPost.postImage().putFile(filepath)
                     .addOnSuccessListener {
                         pd.dismiss()
                         Toast.makeText(applicationContext, "File uploaded", Toast.LENGTH_LONG).show()
